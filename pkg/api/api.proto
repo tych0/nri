@@ -300,6 +300,7 @@ message LinuxContainer {
   LinuxResources resources = 3;
   OptionalInt oom_score_adj = 4;
   string cgroups_path = 5;
+  OptionalString seccomp_policy = 6;
 }
 
 // A linux namespace.
@@ -403,6 +404,7 @@ message LinuxContainerAdjustment {
   LinuxResources resources = 2;
   string cgroups_path = 3;
   OptionalInt oom_score_adj = 4;
+  OptionalString SeccompPolicy = 5;
 }
 
 // Requested update to an already created container.

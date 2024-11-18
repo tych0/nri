@@ -117,6 +117,7 @@ func (g *Generator) Adjust(adjust *nri.ContainerAdjustment) error {
 	g.AdjustDevices(adjust.GetLinux().GetDevices())
 	g.AdjustCgroupsPath(adjust.GetLinux().GetCgroupsPath())
 	g.AdjustOomScoreAdj(adjust.GetLinux().GetOomScoreAdj())
+	g.AdjustSeccompPolicy(adjust.GetLinux().GetSeccompPolicy())
 
 	resources := adjust.GetLinux().GetResources()
 	if err := g.AdjustResources(resources); err != nil {
@@ -329,6 +330,23 @@ func (g *Generator) AdjustCgroupsPath(path string) {
 func (g *Generator) AdjustOomScoreAdj(score *nri.OptionalInt) {
 	if score != nil {
 		g.SetProcessOOMScoreAdj(int(score.Value))
+	}
+}
+
+func (g *Generator) AdjustSeccompPolicy(policy *nri.OptionalString) {
+	if policy != nil {
+		// as a hack, we just hard code the policy if the value is
+		// present; plumbing all the bits through is an exercise for
+		// future me.
+		fmt.Printf("TYCHO: adding hard coded policy!")
+		g.Config.Linux.Seccomp = &rspec.LinuxSeccomp{
+			DefaultAction: rspec.ActAllow,
+			ListenerPath: policy.Value,
+			Syscalls: []rspec.LinuxSyscall{rspec.LinuxSyscall{
+				Names: []string{"sched_getaffinity"},
+				Action: rspec.ActNotify,
+			}},
+		}
 	}
 }
 
