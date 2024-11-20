@@ -300,6 +300,10 @@ message LinuxContainer {
   LinuxResources resources = 3;
   OptionalInt oom_score_adj = 4;
   string cgroups_path = 5;
+  // this is a fully json-encoded version of:
+  // https://github.com/opencontainers/runtime-spec/blob/86290f6a00fbdc6d561e14b2e6a11788a1a5f29c/specs-go/config.go#L620-L629
+  // which corresponds to nri (containerd's) view of the LinuxSeccomp struct.
+  string seccomp_policy = 6;
 }
 
 // A linux namespace.
@@ -403,6 +407,9 @@ message LinuxContainerAdjustment {
   LinuxResources resources = 2;
   string cgroups_path = 3;
   OptionalInt oom_score_adj = 4;
+  // see above note about seccomp_policy for encoding of this string; if this
+  // is not supplied, the seccomp policy remains unchanged.
+  OptionalString seccomp_policy = 5;
 }
 
 // Requested update to an already created container.

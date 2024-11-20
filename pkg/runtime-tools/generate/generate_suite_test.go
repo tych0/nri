@@ -17,6 +17,7 @@
 package generate_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -375,6 +376,41 @@ var _ = Describe("Adjustment", func() {
 			)))
 		})
 	})
+
+	When("has a seccomp policy adjustment", func() {
+		It("adjusts Spec correctly", func() {
+			seccomp := &rspec.LinuxSeccomp{
+				DefaultAction: rspec.ActAllow,
+				ListenerPath:  "/run/meshuggah-rocks.sock",
+				Syscalls:      []rspec.LinuxSyscall{rspec.LinuxSyscall{
+					Names: []string{"sched_getaffinity"},
+					Action: rspec.ActNotify,
+				}},
+			}
+
+			seccompPolicyData, err := json.Marshal(seccomp)
+			Expect(err).To(BeNil())
+
+			var (
+				spec   = makeSpec()
+				adjust = &api.ContainerAdjustment{
+					Linux: &api.LinuxContainerAdjustment{
+						SeccompPolicy: &api.OptionalString{
+							Value: string(seccompPolicyData),
+						},
+					},
+				}
+			)
+
+			rg := &rgen.Generator{Config: spec}
+			xg := xgen.SpecGenerator(rg)
+
+			Expect(xg).ToNot(BeNil())
+			Expect(xg.Adjust(adjust)).To(Succeed())
+			Expect(spec.Linux.Seccomp).To(Equal(seccomp))
+		})
+	})
+
 })
 
 type specOption func(*rspec.Spec)
