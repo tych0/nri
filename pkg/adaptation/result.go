@@ -222,6 +222,9 @@ func (r *result) adjust(rpl *ContainerAdjustment, plugin string) error {
 		if err := r.adjustSeccompPolicy(rpl.Linux.SeccompPolicy, plugin); err != nil {
 			return err
 		}
+		if err := r.adjustNamespaces(rpl.Linux.Namespaces, plugin); err != nil {
+			return err
+		}
 	}
 	if err := r.adjustRlimits(rpl.Rlimits, plugin); err != nil {
 		return err
@@ -757,6 +760,22 @@ func (r *result) adjustSeccompPolicy(adjustment *LinuxSeccomp, plugin string) er
 	return nil
 }
 
+func (r *result) adjustNamespaces(adjustment []*LinuxNamespace, plugin string) error {
+	if adjustment == nil {
+		return nil
+	}
+	create, id := r.request.create, r.request.create.Container.Id
+
+	if err := r.owners.claimNamespaces(id, plugin); err != nil {
+		return err
+	}
+
+	create.Container.Linux.Namespaces = adjustment
+	r.reply.adjust.Linux.Namespaces = adjustment
+
+	return nil
+}
+
 func (r *result) adjustRlimits(rlimits []*POSIXRlimit, plugin string) error {
 	create, id, adjust := r.request.create, r.request.create.Container.Id, r.reply.adjust
 	for _, l := range rlimits {
@@ -996,6 +1015,7 @@ type owners struct {
 	cgroupsPath         string
 	oomScoreAdj         string
 	seccompPolicy       string
+	namespaces          string
 	rlimits             map[string]string
 }
 
@@ -1118,6 +1138,10 @@ func (ro resultOwners) claimOomScoreAdj(id, plugin string) error {
 
 func (ro resultOwners) claimSeccompPolicy(id, plugin string) error {
 	return ro.ownersFor(id).claimSeccompPolicy(plugin)
+}
+
+func (ro resultOwners) claimNamespaces(id, plugin string) error {
+	return ro.ownersFor(id).claimNamespaces(plugin)
 }
 
 func (ro resultOwners) claimRlimits(id, typ, plugin string) error {
@@ -1378,6 +1402,14 @@ func (o *owners) claimSeccompPolicy(plugin string) error {
 		return conflict(plugin, other, "seccomp policy")
 	}
 	o.seccompPolicy = plugin
+	return nil
+}
+
+func (o *owners) claimNamespaces(plugin string) error {
+	if other := o.namespaces; other != "" {
+		return conflict(plugin, other, "seccomp policy")
+	}
+	o.namespaces = plugin
 	return nil
 }
 

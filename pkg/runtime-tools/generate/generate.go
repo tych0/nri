@@ -120,6 +120,9 @@ func (g *Generator) Adjust(adjust *nri.ContainerAdjustment) error {
 	if err := g.AdjustSeccompPolicy(adjust.GetLinux().GetSeccompPolicy()); err != nil {
 		return err
 	}
+	if err := g.AdjustNamespaces(adjust.GetLinux().GetNamespaces()); err != nil {
+		return err
+	}
 
 	resources := adjust.GetLinux().GetResources()
 	if err := g.AdjustResources(resources); err != nil {
@@ -365,6 +368,16 @@ func (g *Generator) AdjustSeccompPolicy(policy *nri.LinuxSeccomp) error {
 	g.Config.Linux.Seccomp.Flags = flags
 
 	g.Config.Linux.Seccomp.Syscalls = nri.ToOCILinuxSyscalls(policy.Syscalls)
+
+	return nil
+}
+
+func (g *Generator) AdjustNamespaces(namespaces []*nri.LinuxNamespace) error {
+	for _, ns := range namespaces {
+		if err := g.AddOrReplaceLinuxNamespace(ns.Type, ns.Path); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

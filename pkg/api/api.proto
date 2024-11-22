@@ -405,6 +405,7 @@ message LinuxContainerAdjustment {
   string cgroups_path = 3;
   OptionalInt oom_score_adj = 4;
   LinuxSeccomp seccomp_policy = 5;
+  repeated LinuxNamespace namespaces = 6;
 }
 
 message LinuxSeccomp {
